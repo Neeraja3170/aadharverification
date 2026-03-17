@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AadhaarVerify — Secure Registration</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+    :root {
+      --ink: #09090f;
+      --paper: #f3f0e8;
+      --saffron: #e8651a;
+      --sf-dim: #e8651a18;
+      --green: #138808;
+      --gn-dim: #13880812;
+      --navy: #1a237e;
+      --nv-dim: #1a237e14;
+      --border: #d6d0c6;
+      --muted: #7a7068;
+      --card: #fff;
+      --input: #faf8f4;
+      --err: #c0392b;
+      --radius: 10px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: 'Sora', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 39px, #d6d0c618 39px, #d6d0c618 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, #d6d0c618 39px, #d6d0c618 40px);
+      pointer-events: none;
+      z-index: 0
+    }
+
+    .tribar {
+      height: 5px;
+      background: linear-gradient(to right, var(--saffron) 33%, #fff 33% 67%, var(--green) 67%);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200
+    }
+
+    header {
+      position: sticky;
+      top: 5px;
+      z-index: 100;
+      background: rgba(243, 240, 232, .92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 36px;
+      display: flex;
+      align-items: center;
+      gap: 14px
+    }
+
+    .hlogo {
+      width: 42px;
+      height: 42px;
+      background: var(--navy);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px
+    }
+
+    .htitle h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -.03em
+    }
+
+    .htitle p {
+      font-size: .65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-top: 1px
+    }
+
+    .hbadge {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gn-dim);
+      border: 1px solid #13880830;
+      color: var(--green);
+      border-radius: 100px;
+      padding: 4px 12px;
+      font-size: .68rem;
+      font-weight: 600
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      padding: 44px 16px 80px
+    }
+
+    /* ─── card ─── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 6px 40px rgba(0, 0, 0, .07)
+    }
+
+    /* ─── stepper ─── */
+    .stepper {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 32px
+    }
+
+    .sw {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px
+    }
+
+    .sc {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      transition: all .25s
+    }
+
+    .sc.done {
+      background: var(--green);
+      color: #fff
+    }
+
+    .sc.active {
+      background: var(--navy);
+      color: #fff;
+      box-shadow: 0 0 0 4px var(--nv-dim)
+    }
+
+    .sc.todo {
+      background: transparent;
+      color: var(--muted);
+      border: 2px solid var(--border)
+    }
+
+    .sl {
+      font-size: .62rem;
+      color: var(--muted);
+      white-space: nowrap
+    }
+
+    .sline {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin: 15px 8px 0;
+      transition: background .3s
+    }
+
+    .sline.done {
+      background: var(--green)
+    }
+
+    /* ─── form heading ─── */
+    .fh {
+      margin-bottom: 24px
+    }
+
+    .ftag {
+      display: inline-block;
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--saffron);
+      background: var(--sf-dim);
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 8px;
+      font-family: 'Space Mono', monospace
+    }
+
+    .fh h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      line-height: 1.2
+    }
+
+    .fh p {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: 5px;
+      line-height: 1.5
+    }
+
+    /* ─── grid ─── */
+    .fg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px
+    }
+
+    .fg .full {
+      grid-column: 1/-1
+    }
+
+    /* ─── field ─── */
+    .f {
+      display: flex;
+      flex-direction: column;
+      gap: 5px
+    }
+
+    .f label {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .02em
+    }
+
+    .f label span {
+      color: var(--saffron)
+    }
+
+    .f input,
+    .f select,
+    .f textarea {
+      width: 100%;
+      background: var(--input);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: .85rem;
+      font-family: 'Sora', sans-serif;
+      color: var(--ink);
+      outline: none;
+      transition: border .2s, box-shadow .2s;
+      -webkit-appearance: none
+    }
+
+    .f input:focus,
+    .f select:focus,
+    .f textarea:focus {
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px var(--nv-dim);
+      background: #fff
+    }
+
+    .f input.err,
+    .f select.err,
+    .f textarea.err {
+      border-color: var(--err)
+    }
+
+    .f .em {
+      font-size: .67rem;
+      color: var(--err)
+    }
+
+    .f textarea {
+      resize: vertical;
+      min-height: 72px
+    }
+
+    /* ─── info bar ─── */
+    .ibar {
+      background: var(--sf-dim);
+      border: 1px solid #e8651a33;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: .72rem;
+      color: #a04010;
+      line-height: 1.5;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px
+    }
+
+    /* ─── upload ─── */
+    .uzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      background: var(--input);
+      position: relative
+    }
+
+    .uzone:hover,
+    .uzone.drag {
+      border-color: var(--navy);
+      background: var(--nv-dim)
+    }
+
+    .uzone input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%
+    }
+
+    .uzone .ui {
+      font-size: 2.2rem;
+      margin-bottom: 8px
+    }
+
+    .uzone h3 {
+      font-size: .88rem;
+      font-weight: 600;
+      margin-bottom: 3px
+    }
+
+    .uzone p {
+      font-size: .72rem;
+      color: var(--muted)
+    }
+
+    .uzone .hint {
+      margin-top: 6px;
+      font-size: .7rem;
+      color: var(--navy);
+      font-weight: 600
+    }
+
+    .prev {
+      margin-top: 14px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      position: relative
+    }
+
+    .prev img {
+      width: 100%;
+      display: block;
+      max-height: 210px;
+      object-fit: cover
+    }
+
+    .prevX {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(9, 9, 15, .65);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: .68rem;
+      cursor: pointer;
+      font-family: 'Sora', sans-serif
+    }
+
+    .prevX:hover {
+      background: var(--err)
+    }
+
+    /* ─── verify status ─── */
+    .vs {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1.5px solid
+    }
+
+    .vs.loading {
+      border-color: var(--border);
+      background: var(--input)
+    }
+
+    .vs.success {
+      border-color: #b7e4c7;
+      background: #f0fdf4
+    }
+
+    .vs.fail {
+      border-color: #f5c6c6;
+      background: #fef2f2
+    }
+
+    .vs.warn {
+      border-color: #fde68a;
+      background: #fffbeb
+    }
+
+    .warn-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      display: block
+    }
+
+    .warn-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 6px
+    }
+
+    .warn-sub {
+      font-size: .78rem;
+      color: #b45309;
+      line-height: 1.6
+    }
+
+    .vt {
+      font-size: .82rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 7px
+    }
+
+    .vc {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-top: 8px
+    }
+
+    .vci {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: .72rem;
+      color: var(--muted)
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .dot.p {
+      background: var(--green)
+    }
+
+    .dot.f {
+      background: var(--err)
+    }
+
+    .dot.s {
+      background: #f59e0b
+    }
+
+    /* ─── ocr debug ─── */
+    .ocr-raw {
+      margin-top: 10px;
+      background: #f8f6f0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: .63rem;
+      color: #555;
+      line-height: 1.7;
+      max-height: 80px;
+      overflow-y: auto
+    }
+
+    /* ─── buttons ─── */
+    .brow {
+      margin-top: 24px;
+      display: flex;
+      gap: 10px
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 11px 22px;
+      border-radius: 8px;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: 'Sora', sans-serif;
+      transition: all .18s;
+      white-space: nowrap
+    }
+
+    .btn-p {
+      background: var(--navy);
+      color: #fff;
+      flex: 1;
+      box-shadow: 0 2px 14px rgba(26, 35, 126, .22)
+    }
+
+    .btn-p:hover:not(:disabled) {
+      background: #283593;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(26, 35, 126, .32)
+    }
+
+    .btn-p:disabled {
+      opacity: .45;
+      cursor: not-allowed
+    }
+
+    .btn-g {
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid var(--border)
+    }
+
+    .btn-g:hover {
+      background: var(--input);
+      color: var(--ink)
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .sp {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, .3);
+      border-top-color: #fff;
+      animation: spin .7s linear infinite;
+      display: inline-block
+    }
+
+    .sp.dk {
+      border-color: rgba(26, 35, 126, .2);
+      border-top-color: var(--navy)
+    }
+
+    /* ─── dashboard ─── */
+    .db {
+      max-width: 860px;
+      width: 100%
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1a237e, #283593 55%, #1565c0);
+      border-radius: 16px;
+      padding: 32px 36px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px
+    }
+
+    .hero::before {
+      content: '🇮🇳';
+      position: absolute;
+      right: -8px;
+      top: -16px;
+      font-size: 120px;
+      opacity: .07;
+      pointer-events: none
+    }
+
+    .hbadge2 {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, .15);
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: 100px;
+      padding: 3px 11px;
+      font-size: .65rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 14px
+    }
+
+    .hero h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -.04em;
+      margin-bottom: 4px
+    }
+
+    .hero p {
+      font-size: .82rem;
+      opacity: .72
+    }
+
+    .hmeta {
+      margin-top: 22px;
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap
+    }
+
+    .hmi {
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .hmi .lb {
+      font-size: .6rem;
+      opacity: .55;
+      text-transform: uppercase;
+      letter-spacing: .08em
+    }
+
+    .hmi .vl {
+      font-size: .85rem;
+      font-weight: 600;
+      font-family: 'Space Mono', monospace
+    }
+
+    .dstats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 22px
+    }
+
+    .dsc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px
+    }
+
+    .dsc .sl2 {
+      font-size: .65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 6px
+    }
+
+    .dsc .sv {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      color: var(--navy)
+    }
+
+    .dsc .sn {
+      font-size: .67rem;
+      color: var(--muted);
+      margin-top: 2px
+    }
+
+    .dgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px
+    }
+
+    .dsec {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px
+    }
+
+    .dsec h3 {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 14px
+    }
+
+    .dr {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 12px
+    }
+
+    .dr:last-child {
+      margin-bottom: 0
+    }
+
+    .dr .dl {
+      font-size: .62rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em
+    }
+
+    .dr .dv {
+      font-size: .88rem;
+      font-weight: 500
+    }
+
+    .vpill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f0fdf4;
+      border: 1px solid #b7e4c7;
+      color: var(--green);
+      border-radius: 100px;
+      padding: 3px 11px;
+      font-size: .68rem;
+      font-weight: 700
+    }
+
+    .av {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--saffron), var(--navy));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px
+    }
+
+    .mono {
+      font-family: 'Space Mono', monospace;
+      letter-spacing: .1em;
+      color: var(--navy)
+    }
+
+    .rag {
+      margin-top: 18px;
+      text-align: right
+    }
+
+    .rag button {
+      background: none;
+      border: none;
+      font-size: .75rem;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'Sora', sans-serif;
+      text-decoration: underline
+    }
+
+    .rag button:hover {
+      color: var(--ink)
+    }
+
+    .conf-bar-wrap {
+      margin-top: 10px
+    }
+
+    .conf-bar-wrap .lb2 {
+      font-size: .65rem;
+      color: var(--muted);
+      margin-bottom: 4px
+    }
+
+    .conf-bar {
+      height: 6px;
+      background: #e8e4dc;
+      border-radius: 3px;
+      overflow: hidden
+    }
+
+    .db-actions {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-logout {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fee2e2;
+      padding: 12px 24px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: #fee2e2;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+    }
+
+    .uzone.has-file {
+      border-color: var(--green);
+      background: rgba(16, 185, 129, 0.03);
+      cursor: default;
+    }
+
+    .conf-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1s ease;
+      background: linear-gradient(to right, var(--saffron), var(--green))
+    }
+
+    @media(max-width:600px) {
+      header {
+        padding: 14px 16px
+      }
+
+      .card {
+        padding: 24px 18px
+      }
+
+      .fg {
+        grid-template-columns: 1fr
+      }
+
+      .dstats {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .dgrid {
+        grid-template-columns: 1fr
+      }
+
+      .hero {
+        padding: 22px 18px
+      }
+
+      .hero h2 {
+        font-size: 1.4rem
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef } = React;
+    const API = "http://localhost:8000";
+
+    const initials = (f, l) => `${(f || '?')[0]}${(l || '?')[0]}`.toUpperCase();
+    const fmtDate = iso => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }); };
+    const maskUID = last4 => `XXXX-XXXX-${last4 || '????'}`;
+
+    /* ── Step bar ── */
+    function Stepper({ cur }) {
+      const steps = ['Personal Details', 'Aadhaar Verify'];
+      return (
+        <div className="stepper">
+          {steps.map((lbl, i) => {
+            const n = i + 1, st = n < cur ? 'done' : n === cur ? 'active' : 'todo';
+            return (
+              <React.Fragment key={i}>
+                <div className="sw">
+                  <div className={`sc ${st}`}>{st === 'done' ? '✓' : n}</div>
+                  <div className="sl">{lbl}</div>
+                </div>
+                {i < steps.length - 1 && <div className={`sline ${st === 'done' ? 'done' : ''}`} />}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      );
+    }
+
+    /* ── Field wrapper — defined OUTSIDE every component so React never remounts it ── */
+    function Field({ label, req, error, children }) {
+      return (
+        <div className="f">
+          <label>{label}{req && <span> *</span>}</label>
+          {children}
+          {error && <span className="em">{error}</span>}
+        </div>
+      );
+    }
+
+    /* ── Step 1 ── */
+    function Step1({ data, onChange, onNext }) {
+      const [errs, setErrs] = useState({});
+
+      const validate = () => {
+        const e = {};
+        if (!data.firstName.trim()) e.firstName = 'Required';
+        if (!data.lastName.trim()) e.lastName = 'Required';
+        if (!data.dob) e.dob = 'Required';
+        if (!/^\d{12}$/.test(data.aadhaarNumber.replace(/\s/g, ''))) e.aadhaarNumber = '12-digit number required';
+        if (!data.gender) e.gender = 'Required';
+        if (!data.address.trim()) e.address = 'Required';
+        if (!/\S+@\S+\.\S+/.test(data.email)) e.email = 'Valid email required';
+        if (!/^\d{10}$/.test(data.phone)) e.phone = '10-digit number required';
+        setErrs(e);
+        return Object.keys(e).length === 0;
+      };
+
+      const handleAadhaar = (e) => {
+        let v = e.target.value.replace(/\D/g, '').slice(0, 12);
+        v = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+        onChange('aadhaarNumber', v);
+      };
+
+      return (
+        <>
+          <div className="fh">
+            <span className="ftag">Step 1 of 2</span>
+            <h2>Personal Details</h2>
+            <p>Enter your details exactly as they appear on your Aadhaar card.</p>
+          </div>
+          <div className="ibar">🔒 All data is processed locally on your server — no third-party APIs used.</div>
+          <div className="fg">
+
+            {/* First Name */}
+            <Field label="First Name" req error={errs.firstName}>
+              <input
+                type="text"
+                placeholder="Rahul"
+                value={data.firstName}
+                className={errs.firstName ? 'err' : ''}
+                onChange={e => onChange('firstName', e.target.value)}
+              />
+            </Field>
+
+            {/* Last Name */}
+            <Field label="Last Name" req error={errs.lastName}>
+              <input
+                type="text"
+                placeholder="Sharma"
+                value={data.lastName}
+                className={errs.lastName ? 'err' : ''}
+                onChange={e => onChange('lastName', e.target.value)}
+              />
+            </Field>
+
+            {/* Date of Birth */}
+            <Field label="Date of Birth" req error={errs.dob}>
+              <input
+                type="date"
+                value={data.dob}
+                className={errs.dob ? 'err' : ''}
+                onChange={e => onChange('dob', e.target.value)}
+              />
+            </Field>
+
+            {/* Gender */}
+            <Field label="Gender" req error={errs.gender}>
+              <select
+                value={data.gender}
+                className={errs.gender ? 'err' : ''}
+                onChange={e => onChange('gender', e.target.value)}
+              >
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other / Transgender">Other / Transgender</option>
+              </select>
+            </Field>
+
+            {/* Aadhaar Number */}
+            <div className="f full">
+              <label>Aadhaar Number<span> *</span></label>
+              <input
+                type="text"
+                maxLength={14}
+                placeholder="1234 5678 9012"
+                value={data.aadhaarNumber}
+                className={errs.aadhaarNumber ? 'err' : ''}
+                style={{ fontFamily: "'Space Mono',monospace", letterSpacing: '.15em' }}
+                onChange={handleAadhaar}
+              />
+              {errs.aadhaarNumber && <span className="em">{errs.aadhaarNumber}</span>}
+            </div>
+
+            {/* Address */}
+            <div className="f full">
+              <label>Address (as on Aadhaar)<span> *</span></label>
+              <textarea
+                placeholder="House No, Street, Locality, City, State, PIN"
+                value={data.address}
+                className={errs.address ? 'err' : ''}
+                onChange={e => onChange('address', e.target.value)}
+              />
+              {errs.address && <span className="em">{errs.address}</span>}
+            </div>
+
+            {/* Email */}
+            <Field label="Email Address" req error={errs.email}>
+              <input
+                type="email"
+                placeholder="rahul@example.com"
+                value={data.email}
+                className={errs.email ? 'err' : ''}
+                onChange={e => onChange('email', e.target.value)}
+              />
+            </Field>
+
+            {/* Phone */}
+            <Field label="Mobile Number" req error={errs.phone}>
+              <input
+                type="tel"
+                placeholder="9876543210"
+                value={data.phone}
+                className={errs.phone ? 'err' : ''}
+                onChange={e => onChange('phone', e.target.value)}
+              />
+            </Field>
+
+          </div>
+          <div className="brow">
+            <button className="btn btn-p" onClick={() => { if (validate()) onNext(); }}>Continue →</button>
+          </div>
+        </>
+      );
+    }
+
+    /* ── Step 2 ── */
+    const CHECK_LABELS = { aadhaar_number: 'Aadhaar Number', dob: 'Date of Birth', name: 'Name Region' };
+    function Step2({ formData, onBack, onSuccess }) {
+      const [file, setFile] = useState(null);
+      const [preview, setPreview] = useState(null);
+      const [drag, setDrag] = useState(false);
+      const [status, setStatus] = useState(null);
+      const [showRaw, setShowRaw] = useState(false);
+      const ref = useRef();
+
+      const pick = f => {
+        if (!f || !f.type.startsWith('image/')) return;
+        setFile(f); setPreview(URL.createObjectURL(f)); setStatus(null);
+      };
+
+      const verify = async () => {
+        if (!file) return;
+        setStatus('loading');
+        try {
+          const fd = new FormData();
+          fd.append('aadhaarImage', file);
+          Object.entries(formData).forEach(([k, v]) => {
+            fd.append(k, k === 'aadhaarNumber' ? v.replace(/\s/g, '') : v);
+          });
+          const res = await fetch(`${API}/api/register/verify-aadhaar`, { method: 'POST', body: fd, credentials: 'include' });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            setStatus({ ok: true, ...d });
+            setTimeout(() => onSuccess(d.user), 800);
+          } else if (res.status === 422 && d.not_aadhaar) {
+            setStatus({ ok: false, message: d.error, not_aadhaar: true });
+          } else {
+            setStatus({ ok: false, ...d });
+          }
+        } catch (e) {
+          setStatus({ ok: false, message: `Connection error: ${e.message}. Is the backend running on port 8000?` });
+        }
+      };
+
+      const checkColor = v => v === true ? 'p' : v === false ? 'f' : 's';
+      const checkText = v => v === true ? 'Matched' : v === false ? 'Mismatch' : 'Skipped (not detected)';
+
+      return (
+        <>
+          <div className="fh">
+            <span className="ftag">Step 2 of 2</span>
+            <h2>Upload Aadhaar Card</h2>
+            <p>Upload a clear, well-lit photo. Our OpenCV + KNN engine will verify your details — 100% local, no cloud.</p>
+          </div>
+          <input ref={ref} type="file" accept="image/*" onChange={e => pick(e.target.files[0])} style={{ display: 'none' }} />
+          <div className={`uzone ${drag ? 'drag' : ''} ${file ? 'has-file' : ''}`}
+            onDragOver={e => { e.preventDefault(); setDrag(true) }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={e => { e.preventDefault(); setDrag(false); pick(e.dataTransfer.files[0]) }}
+            onClick={() => !file && ref.current.click()}>
+            {!file ? (
+              <><div className="ui">🪪</div>
+                <h3>Drop Aadhaar image here</h3>
+                <p>JPG · PNG · WEBP · up to 10 MB</p>
+                <p className="hint">Click to browse</p></>
+            ) : (
+              <p style={{ fontSize: '.8rem', color: 'var(--green)', fontWeight: '600' }}>✓ {file.name} (Ready to verify)</p>
+            )}
+          </div>
+
+          {preview && (
+            <div className="prev">
+              <img src={preview} alt="Aadhaar" />
+              <button className="prevX" onClick={() => { setFile(null); setPreview(null); setStatus(null) }}>Remove</button>
+            </div>
+          )}
+
+          {status && status !== 'loading' && (
+            <div className={`vs ${status.ok ? 'success' : status.not_aadhaar ? 'warn' : 'fail'}`}>
+              {status.not_aadhaar && (
+                <>
+                  <span className="warn-icon">🪪</span>
+                  <div className="warn-title">⚠️ Please upload your Aadhaar card image</div>
+                  <div className="warn-sub">{status.message}</div>
+                </>
+              )}
+              {!status.not_aadhaar && (
+                <>
+                  <div className="vt">{status.ok ? '✅' : '❌'} {status.ok ? 'Verified! Redirecting…' : status.message}</div>
+                  {status.confidence !== undefined && (
+                    <div className="conf-bar-wrap">
+                      <div className="lb2">OCR Confidence: {Math.round(status.confidence * 100)}%</div>
+                      <div className="conf-bar"><div className="conf-fill" style={{ width: `${status.confidence * 100}%` }} /></div>
+                    </div>
+                  )}
+                  {status.checks && (
+                    <div className="vc">
+                      {Object.entries(status.checks).map(([k, v]) => (
+                        <div key={k} className="vci">
+                          <div className={`dot ${checkColor(v)}`} />
+                          {CHECK_LABELS[k] || k}: <strong style={{ color: v === true ? 'var(--green)' : v === false ? 'var(--err)' : '#f59e0b' }}>{checkText(v)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {status.ocr_raw && status.ocr_raw.length > 0 && (
+                    <>
+                      <button onClick={() => setShowRaw(s => !s)}
+                        style={{
+                          marginTop: 8, background: 'none', border: 'none', fontSize: '.68rem',
+                          color: 'var(--muted)', cursor: 'pointer', textDecoration: 'underline'
+                        }}>
+                        {showRaw ? 'Hide' : 'Show'} raw OCR lines
+                      </button>
+                      {showRaw && <div className="ocr-raw">{status.ocr_raw.join('\n')}</div>}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {status === 'loading' && (
+            <div className="vs loading">
+              <div className="vt"><span className="sp dk" /> Running EasyOCR text extraction…</div>
+              <p style={{ fontSize: '.72rem', color: 'var(--muted)', marginTop: 4 }}>Processing locally on your CPU. May take 5–15 s.</p>
+            </div>
+          )}
+
+          <div className="brow">
+            <button className="btn btn-g" onClick={onBack}>← Back</button>
+            <button className="btn btn-p" onClick={verify}
+              disabled={!file || status === 'loading' || (status && status.ok)}>
+              {status === 'loading' ? <><span className="sp" />Verifying…</> : '🔍 Verify & Register'}
+            </button>
+          </div>
+        </>
+      );
+    }
+
+    /* ── Dashboard ── */
+    function Dashboard({ user, onLogout }) {
+      return (
+        <div className="db">
+          <div className="hero">
+            <div className="hbadge2">✅ Identity Verified</div>
+            <h2>Welcome, {user.firstName}!</h2>
+            <p>Your Aadhaar-linked identity is verified via EasyOCR — 100% local processing.</p>
+            <div className="hmeta">
+              <div className="hmi"><span className="lb">Joined</span><span className="vl">{fmtDate(user.joinedAt)}</span></div>
+              <div className="hmi"><span className="lb">Aadhaar</span><span className="vl">{maskUID(user.aadhaar)}</span></div>
+              <div className="hmi"><span className="lb">User ID</span><span className="vl">#{user.id}</span></div>
+              <div className="hmi"><span className="lb">OCR Confidence</span><span className="vl">{Math.round((user.ocr_confidence || 0) * 100)}%</span></div>
+            </div>
+          </div>
+          <div className="dstats">
+            <div className="dsc"><div className="sl2">KYC Status</div>
+              <div style={{ marginTop: 4 }}><span className="vpill">✓ Verified</span></div>
+              <div className="sn">Aadhaar authenticated</div></div>
+            <div className="dsc"><div className="sl2">Account Type</div>
+              <div className="sv" style={{ fontSize: '1.05rem' }}>Individual</div>
+              <div className="sn">Standard citizen</div></div>
+            <div className="dsc"><div className="sl2">Engine</div>
+              <div className="sv" style={{ fontSize: '.85rem', marginTop: 4 }}>EasyOCR</div>
+              <div className="sn">No GPU · No cloud API</div></div>
+          </div>
+          <div className="dgrid">
+            <div className="dsec">
+              <div className="av">{initials(user.firstName, user.lastName)}</div>
+              <h3>Profile</h3>
+              <div className="dr"><span className="dl">Full Name</span><span className="dv">{user.firstName} {user.lastName}</span></div>
+              <div className="dr"><span className="dl">Gender</span><span className="dv">{user.gender}</span></div>
+              <div className="dr"><span className="dl">Date of Birth</span><span className="dv">{fmtDate(user.dob)}</span></div>
+              <div className="dr"><span className="dl">Aadhaar (masked)</span><span className="dv mono">{maskUID(user.aadhaar)}</span></div>
+            </div>
+            <div className="dsec">
+              <h3>Contact &amp; Address</h3>
+              <div className="dr"><span className="dl">Email</span><span className="dv">{user.email}</span></div>
+              <div className="dr"><span className="dl">Mobile</span><span className="dv">{user.phone}</span></div>
+              <div className="dr"><span className="dl">Address</span><span className="dv" style={{ fontSize: '.8rem', lineHeight: 1.5 }}>{user.address}</span></div>
+              <div style={{ marginTop: 14 }}><span className="vpill">🔒 Locally Processed</span></div>
+            </div>
+          </div>
+          <div className="db-actions">
+            <button className="btn btn-logout" onClick={onLogout}>Logout from Session</button>
+            <p className="sn">This will clear your local verification data</p>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── App ── */
+    const BLANK = { firstName: '', lastName: '', dob: '', gender: '', aadhaarNumber: '', address: '', email: '', phone: '' };
+    function App() {
+      const savedStep = parseInt(localStorage.getItem('av_step')) || 1;
+      const savedData = JSON.parse(localStorage.getItem('av_data')) || BLANK;
+
+      const [step, setStep] = useState(savedStep);
+      const [data, setData] = useState(savedData);
+      const [user, setUser] = useState(null);
+
+      const updateStep = (s) => { setStep(s); localStorage.setItem('av_step', s); };
+      const updateData = (d) => { setData(d); localStorage.setItem('av_data', JSON.stringify(d)); };
+      const ch = (k, v) => {
+        const next = { ...data, [k]: v };
+        updateData(next);
+      };
+
+      const handleLogout = () => {
+        setUser(null);
+        updateStep(1);
+        updateData(BLANK);
+        localStorage.clear();
+      };
+      if (user) return (
+        <div><div className="tribar" />
+          <header>
+            <div className="hlogo">🪪</div>
+            <div className="htitle"><h1>AadhaarVerify</h1><p>Digital Identity Platform</p></div>
+            <div className="hbadge">✓ Registered</div>
+          </header>
+          <main><Dashboard user={user} onLogout={handleLogout} /></main></div>
+      );
+      return (
+        <div><div className="tribar" />
+          <header>
+            <div className="hlogo">🪪</div>
+            <div className="htitle"><h1>AadhaarVerify</h1><p>Digital Identity Platform</p></div>
+            <div className="hbadge">🔒 Secure · Local</div>
+          </header>
+          <main>
+            <div className="card">
+              <Stepper cur={step} />
+              {step === 1
+                ? <Step1 data={data} onChange={ch} onNext={() => updateStep(2)} />
+                : <Step2 formData={data} onBack={() => updateStep(1)} onSuccess={u => setUser(u)} />}
+            </div>
+          </main></div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>
