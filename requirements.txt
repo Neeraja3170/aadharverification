@@ -1,5 +1,6 @@
 flask>=2.3
 pillow>=9.0
 numpy>=1.23
-easyocr>=1.7
+easyocr==1.7.1
+python-bidi==0.4.2
 waitress>=2.1
